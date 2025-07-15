@@ -9,31 +9,26 @@ on:
 jobs:
   build:
     runs-on: windows-latest
+
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
+    - name: Checkout code
+      uses: actions/checkout@v2
 
-      - name: Set up Python
-        uses: actions/setup-python@v2
-        with:
-          python-version: 3.10
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.10
 
-      - name: Install dependencies
-        run: |
-            pip install pyinstaller pystray pillow requests
+    - name: Install dependencies
+      run: |
+        pip install pyinstaller pystray pillow requests
 
+    - name: Build with PyInstaller
+      run: |
+        pyinstaller --onefile --noconsole --hidden-import=pystray --hidden-import=PIL.ImageDraw clark_wealth_console.py
 
-      - name: Build with PyInstaller
-        run: |
-          pyinstaller --onefile --noconsole \
-          --hidden-import=pystray \
-          --hidden-import=pillow \
-          clark_wealth_console.py
-
-
-      - name: Upload EXE
-        uses: actions/upload-artifact@v4
-        with:
-          name: ClarkWealthConsole-EXE
-          path: dist/clark_wealth_console.exe
-
+    - name: Upload EXE
+      uses: actions/upload-artifact@v4
+      with:
+        name: ClarkWealthConsole-EXE
+        path: dist/clark_wealth_console.exe
