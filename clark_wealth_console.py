@@ -2,8 +2,6 @@ import tkinter as tk
 import requests
 import threading
 import time
-import sys
-import os
 
 # === TELEGRAM ALERTS ===
 def send_telegram_alert(message):
@@ -18,10 +16,9 @@ def send_telegram_alert(message):
 
 # === SETTINGS ===
 UPDATE_INTERVAL = 10  # seconds
-SELL_LIMIT_PRICE = 3200  # target sell price
-BUY_ALERT_PRICE = 3000   # target buy price
+sell_limit_price = 3070.00  # editable
+buy_alert_price = 2930.00   # editable
 
-# Track alerts and profit
 sell_alerts_on = True
 buy_alerts_on = True
 realized_profit = 0.00
@@ -30,58 +27,52 @@ heartbeat_state = True
 # === PRICE FETCHING ===
 def fetch_eth_price():
     try:
-        # Try Binance first
         response = requests.get("https://api.binance.com/api/v3/ticker/price?symbol=ETHUSDT", timeout=5)
         data = response.json()
         price = float(data['price'])
         api_status = "Binance ✅"
         return price, api_status
-    except Exception:
+    except:
         try:
-            # Fallback to Coinbase
             response = requests.get("https://api.coinbase.com/v2/prices/ETH-USD/spot", timeout=5)
             data = response.json()
             price = float(data['data']['amount'])
             api_status = "Coinbase 🟠"
             return price, api_status
-        except Exception as e:
-            print(f"API Error: {e}")
+        except:
             api_status = "API Error ❌"
             return None, api_status
 
 # === UPDATE FUNCTION ===
 def update_price():
-    global realized_profit
+    global realized_profit, sell_limit_price, buy_alert_price
     price, api_status = fetch_eth_price()
     if price:
-        root.after(0, price_var.set, f"ETH Price: ${price:,.2f}")
-        root.after(0, api_status_var.set, api_status)
+        price_var.set(f"ETH Price: ${price:,.2f}")
+        api_status_var.set(api_status)
 
-        if sell_alerts_on and price >= SELL_LIMIT_PRICE:
-            root.after(0, alert_var.set, f"🚨 SELL ALERT: ETH hit ${price:,.2f}")
+        if sell_alerts_on and price >= sell_limit_price:
+            alert_var.set(f"🚨 SELL ALERT: ETH hit ${price:,.2f}")
             send_telegram_alert(f"🚨 SELL ALERT: ETH hit ${price:,.2f}")
-        elif buy_alerts_on and price <= BUY_ALERT_PRICE:
-            root.after(0, alert_var.set, f"📢 BUY ALERT: ETH dropped to ${price:,.2f}")
+        elif buy_alerts_on and price <= buy_alert_price:
+            alert_var.set(f"📢 BUY ALERT: ETH dropped to ${price:,.2f}")
             send_telegram_alert(f"📢 BUY ALERT: ETH dropped to ${price:,.2f}")
         else:
-            root.after(0, alert_var.set, "✅ Monitoring...")
+            alert_var.set("✅ Monitoring...")
     else:
-        root.after(0, price_var.set, "ETH Price: Error")
-        root.after(0, api_status_var.set, api_status)
+        price_var.set("ETH Price: Error")
+        api_status_var.set(api_status)
 
     root.after(UPDATE_INTERVAL * 1000, lambda: threading.Thread(target=update_price, daemon=True).start())
 
 # === HEARTBEAT ===
 def animate_heartbeat():
     global heartbeat_state
-    if heartbeat_state:
-        root.after(0, heartbeat_label.config, {"text": "💠"})
-    else:
-        root.after(0, heartbeat_label.config, {"text": "💤"})
+    heartbeat_label.config(text="💠" if heartbeat_state else "💤")
     heartbeat_state = not heartbeat_state
     root.after(1000, animate_heartbeat)
 
-# === TOGGLE ALERTS ===
+# === TOGGLE & UPDATE ===
 def toggle_sell_alerts():
     global sell_alerts_on
     sell_alerts_on = not sell_alerts_on
@@ -97,10 +88,19 @@ def clear_position():
     realized_profit = 0.00
     profit_var.set(f"Realized Profit: ${realized_profit:.2f}")
 
+def update_thresholds():
+    global sell_limit_price, buy_alert_price
+    try:
+        sell_limit_price = float(sell_entry.get())
+        buy_alert_price = float(buy_entry.get())
+        alert_var.set("✅ Thresholds updated")
+    except ValueError:
+        alert_var.set("⚠ Invalid threshold values")
+
 # === GUI ===
 root = tk.Tk()
-root.title("Clark Wealth Console 4.1")
-root.geometry("420x300")
+root.title("Clark Wealth Console 4.2")
+root.geometry("450x350")
 root.configure(bg="#1E1E1E")
 root.resizable(False, False)
 
@@ -118,6 +118,19 @@ tk.Label(root, textvariable=api_status_var, font=("Arial", 12), fg="orange", bg=
 # Heartbeat label
 heartbeat_label = tk.Label(root, text="💠", font=("Arial", 20), fg="skyblue", bg="#1E1E1E")
 heartbeat_label.pack(pady=5)
+
+# Editable thresholds
+tk.Label(root, text="SELL Alert Price ($):", fg="white", bg="#1E1E1E").pack()
+sell_entry = tk.Entry(root, font=("Arial", 12), justify="center")
+sell_entry.insert(0, str(sell_limit_price))
+sell_entry.pack()
+
+tk.Label(root, text="BUY Alert Price ($):", fg="white", bg="#1E1E1E").pack()
+buy_entry = tk.Entry(root, font=("Arial", 12), justify="center")
+buy_entry.insert(0, str(buy_alert_price))
+buy_entry.pack()
+
+tk.Button(root, text="Update Thresholds", command=update_thresholds, font=("Arial", 12), bg="green", fg="white").pack(pady=5)
 
 # Buttons
 sell_button = tk.Button(root, text="SELL Alerts: ON", command=toggle_sell_alerts, font=("Arial", 12), bg="#007ACC", fg="white")
