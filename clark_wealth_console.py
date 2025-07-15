@@ -18,8 +18,8 @@ def send_telegram_alert(message):
 
 # === SETTINGS ===
 UPDATE_INTERVAL = 10  # seconds
-SELL_LIMIT_PRICE = 3070.00  # target sell price
-BUY_ALERT_PRICE = 2930.00   # target buy price
+SELL_LIMIT_PRICE = 3200  # target sell price
+BUY_ALERT_PRICE = 3000   # target buy price
 
 # Track alerts and profit
 sell_alerts_on = True
