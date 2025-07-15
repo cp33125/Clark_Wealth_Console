@@ -20,11 +20,16 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install pyinstaller pystray pillow requests
+            pip install pyinstaller pystray pillow requests
+
 
       - name: Build with PyInstaller
         run: |
-          pyinstaller --onefile --noconsole clark_wealth_console.py
+          pyinstaller --onefile --noconsole \
+          --hidden-import=pystray \
+          --hidden-import=pillow \
+          clark_wealth_console.py
+
 
       - name: Upload EXE
         uses: actions/upload-artifact@v4
