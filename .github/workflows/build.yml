@@ -1,0 +1,33 @@
+name: Build Clark Wealth Console EXE
+
+on:
+  push:
+    branches:
+      - main
+      - upgrade/**
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.10
+
+      - name: Install dependencies
+        run: |
+          pip install pyinstaller pystray pillow requests
+
+      - name: Build with PyInstaller
+        run: |
+          pyinstaller --onefile --noconsole clark_wealth_console.py
+
+      - name: Upload EXE
+        uses: actions/upload-artifact@v3
+        with:
+          name: ClarkWealthConsole-EXE
+          path: dist/clark_wealth_console.exe
